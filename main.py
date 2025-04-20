@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
@@ -12,23 +12,20 @@ import csv
 import time
 
 load_dotenv()
-# === Supabase Config ===
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# === Setup Browser ===
-options = Options()
-options.headless = False
+# === Setup Headless Chrome ===
+chrome_options = Options()
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-driver = webdriver.Remote(
-    command_executor='http://127.0.0.1:4444',
-    options=options
-)
+driver = webdriver.Chrome(options=chrome_options)
 
 driver.get("https://1wugnu.com/casino/play/1play_1play_luckyjet")
 print("🌐 Loading page...")
-
 time.sleep(15)
 
 # === Switch to iframe if present ===
@@ -40,12 +37,10 @@ try:
 except Exception as e:
     print(f"⚠️ Iframe error: {e}")
 
-# === CSV Setup ===
 csv_file = "luckyjet_dataset.csv"
 index_counter = 1
 last_logged_id = None
 
-# Initialize CSV
 try:
     with open(csv_file, mode="r") as f:
         index_counter += sum(1 for _ in f) - 1
@@ -54,7 +49,6 @@ except FileNotFoundError:
         writer = csv.writer(f)
         writer.writerow(["index", "timestamp", "multiplier"])
 
-# === Main Loop ===
 try:
     while True:
         try:
@@ -69,20 +63,16 @@ try:
                 continue
 
             multiplier = raw_text.replace("x", "").strip()
-
-            # Use both ID + multiplier as a dedup key
             unique_key = f"{elem_id}-{multiplier}"
 
             if unique_key != last_logged_id:
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print(f"✅ #{index_counter} | {timestamp} | {elem_id} -> {multiplier}x")
 
-                # Save to CSV
                 with open(csv_file, mode="a", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow([index_counter, timestamp, multiplier])
 
-                # Push to Supabase
                 try:
                     supabase.table("history").insert({
                         "index": index_counter,
