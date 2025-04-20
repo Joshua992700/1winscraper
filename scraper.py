@@ -4,6 +4,8 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -19,12 +21,9 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # === Setup Browser ===
 options = Options()
-options.headless = False
+options.headless = True
 
-driver = webdriver.Remote(
-    command_executor='http://127.0.0.1:4444',
-    options=options
-)
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
 driver.get("https://1wugnu.com/casino/play/1play_1play_luckyjet")
 print("🌐 Loading page...")
