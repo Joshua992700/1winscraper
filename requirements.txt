@@ -1,0 +1,3 @@
+selenium
+supabase
+python-dotenv
