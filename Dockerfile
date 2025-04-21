@@ -17,9 +17,12 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
 RUN apt-get update && apt-get install -y chromium chromium-driver
 ENV CHROME_BIN=/usr/bin/chromium
 
-# Install ChromeDriver to match
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+') && \
-    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*}") && \
+# Get Chrome version and install matching ChromeDriver
+RUN CHROME_VERSION=$(google-chrome --version | grep -oE '[0-9.]+' | head -1) && \
+    echo "Installed Chrome version: $CHROME_VERSION" && \
+    MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d '.' -f 1) && \
+    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${MAJOR_VERSION}") && \
+    echo "Matching ChromeDriver version: $DRIVER_VERSION" && \
     wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/chromedriver && \
