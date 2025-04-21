@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     curl wget unzip gnupg ca-certificates \
     libglib2.0-0 libnss3 libgconf-2-4 libfontconfig1 libxss1 \
@@ -9,34 +9,32 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# ===== Install Google Chrome (latest stable) =====
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
-    rm google-chrome-stable_current_amd64.deb
+# Add Google's signing key and repo
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 
-# ===== Dynamically install matching ChromeDriver =====
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+' | head -1) && \
-    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") && \
+# Install Google Chrome
+RUN apt-get update && apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install ChromeDriver to match
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+') && \
+    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*}") && \
     wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
 
-# ===== Clean up apt cache and remove unnecessary files =====
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
+# Set environment
 ENV CHROME_BIN=/usr/bin/google-chrome
 ENV PATH="/usr/local/bin:$PATH"
 
-# Create working directory
+# Set working dir and copy files
 WORKDIR /app
-
-# Copy application files into the container
 COPY . /app
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run the application
+# Run your app
 CMD ["python", "main.py"]
