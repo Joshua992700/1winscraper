@@ -9,35 +9,29 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Add Google's signing key and repo
+# Add Chrome repo and install Chrome (pinned version)
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+    echo "deb [signed-by=/usr/share/keyrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome
-RUN apt-get update && apt-get install -y chromium chromium-driver
-ENV CHROME_BIN=/usr/bin/chromium
-
-# Get Chrome version and install matching ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | grep -oE '[0-9.]+' | head -1) && \
-    echo "Installed Chrome version: $CHROME_VERSION" && \
-    MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d '.' -f 1) && \
-    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${MAJOR_VERSION}") && \
-    echo "Matching ChromeDriver version: $DRIVER_VERSION" && \
-    wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" && \
+# Install matching ChromeDriver (pinned version)
+ENV CHROMEDRIVER_VERSION=123.0.6312.105
+RUN wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
 
-# Set environment
+# Set environment variables
 ENV CHROME_BIN=/usr/bin/google-chrome
 ENV PATH="/usr/local/bin:$PATH"
 
-# Set working dir and copy files
+# Setup workdir
 WORKDIR /app
 COPY . /app
 
-# Install Python dependencies
+# Install Python deps
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run your app
+# Run app
 CMD ["python", "main.py"]
