@@ -22,17 +22,21 @@ RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+' | head -1) && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
 
+# ===== Clean up apt cache and remove unnecessary files =====
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
 ENV CHROME_BIN=/usr/bin/google-chrome
 ENV PATH="/usr/local/bin:$PATH"
 
-# Create working dir
+# Create working directory
 WORKDIR /app
 
-# Copy app files
+# Copy application files into the container
 COPY . /app
 
-# Install Python deps
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run your script
+# Run the application
 CMD ["python", "main.py"]
