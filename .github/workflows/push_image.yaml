@@ -1,0 +1,33 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [deploy]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: "projects/221096860461/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+        service_account: "joshua-scraper-artifact-pusher@clean-yew-451918-p8.iam.gserviceaccount.com"
+
+    - name: Configure Docker for Artifact Registry
+      run: |
+        gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+
+    - name: Build Docker image
+      run: |
+        docker build -t asia-southeast1-docker.pkg.dev/clean-yew-451918-p8/joshua-1winscraper/1winscraper:latest .
+
+    - name: Push Docker image
+      run: |
+        docker push asia-southeast1-docker.pkg.dev/clean-yew-451918-p8/joshua-1winscraper/1winscraper:latest
+
