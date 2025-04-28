@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y \
 
 # Set environment variables
 ENV CHROME_BIN=/usr/bin/chromium
+ENV SELENIUM_MANAGER_SKIP_DOWNLOAD=true
+
+RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
+
+USER appuser
 
 # Create working directory
 WORKDIR /app
